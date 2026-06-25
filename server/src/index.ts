@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
@@ -46,6 +47,14 @@ app.use('/api/audit', auditRoutes);
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+const clientBuildPath = path.join(__dirname, '../../client/dist');
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
