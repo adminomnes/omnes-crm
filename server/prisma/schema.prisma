@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("EJECUTIVO")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  quotations Quotation[]
+  contracts  Contract[]
+  auditLogs  AuditLog[]
+  documents  Document[]
+
+  @@map("users")
+}
+
+model CompanyConfig {
+  id              Int    @id @default(autoincrement())
+  razonSocial     String @map("razon_social")
+  nombreComercial String @map("nombre_comercial")
+  rut             String
+  giroComercial   String @map("giro_comercial")
+  direccion       String
+  ciudad          String
+  pais            String
+  telefono        String
+  correo          String
+  sitioWeb        String @map("sitio_web")
+  logoPrincipal   String? @map("logo_principal")
+  logoSecundario  String? @map("logo_secundario")
+  colores         String?
+  firmaDigital    String? @map("firma_digital")
+  piePagina       String? @map("pie_pagina")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  legalRepresentative LegalRepresentative?
+
+  @@map("company_config")
+}
+
+model LegalRepresentative {
+  id              Int    @id @default(autoincrement())
+  companyConfigId Int    @unique @map("company_config_id")
+  nombreCompleto  String @map("nombre_completo")
+  rut             String
+  cargo           String
+  correo          String
+  telefono        String
+
+  companyConfig CompanyConfig @relation(fields: [companyConfigId], references: [id], onDelete: Cascade)
+
+  @@map("legal_representative")
+}
+
+model Client {
+  id            Int      @id @default(autoincrement())
+  name          String   @map("nombre")
+  empresa       String
+  rut           String
+  correo        String
+  telefono      String
+  direccion     String
+  ciudad        String
+  observaciones String?
+  createdBy     Int      @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  quotations Quotation[]
+  contracts  Contract[]
+  documents  Document[]
+
+  @@map("clients")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  name        String   @map("nombre")
+  categoria   String
+  descripcion String?
+  valorBase   Float    @map("valor_base")
+  impuesto    Float    @default(19)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  quotationDetails QuotationDetail[]
+
+  @@map("services")
+}
+
+model Quotation {
+  id               Int      @id @default(autoincrement())
+  correlativo      String   @unique
+  fechaEmision     DateTime @default(now()) @map("fecha_emision")
+  fechaVencimiento DateTime @map("fecha_vencimiento")
+  clienteId        Int      @map("cliente_id")
+  userId           Int      @map("user_id")
+  estado           String   @default("BORRADOR")
+  subtotal         Float
+  iva              Float
+  total            Float
+  observaciones    String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  client    Client            @relation(fields: [clienteId], references: [id])
+  user      User              @relation(fields: [userId], references: [id])
+  details   QuotationDetail[]
+  contract  Contract?
+  documents Document[]
+
+  @@map("quotations")
+}
+
+model QuotationDetail {
+  id            Int    @id @default(autoincrement())
+  quotationId   Int    @map("quotation_id")
+  servicioId    Int    @map("servicio_id")
+  descripcion   String?
+  cantidad      Int    @default(1)
+  valorUnitario Float  @map("valor_unitario")
+  subtotal      Float
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  service   Service   @relation(fields: [servicioId], references: [id])
+
+  @@map("quotation_details")
+}
+
+model Contract {
+  id            Int      @id @default(autoincrement())
+  correlativo   String   @unique
+  quotationId   Int      @unique @map("quotation_id")
+  clienteId     Int      @map("cliente_id")
+  userId        Int      @map("user_id")
+  tipo          String   @default("PRESTACION_SERVICIOS")
+  fechaInicio   DateTime @map("fecha_inicio")
+  fechaTermino  DateTime? @map("fecha_termino")
+  valorTotal    Float    @map("valor_total")
+  estado        String   @default("BORRADOR")
+  condiciones   String?
+  contratoTexto String?  @map("contrato_texto")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+  client    Client    @relation(fields: [clienteId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  documents Document[]
+
+  @@map("contracts")
+}
+
+model ContractTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tipo      String
+  contenido String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("contract_templates")
+}
+
+model Document {
+  id          Int      @id @default(autoincrement())
+  name        String
+  tipo        String
+  clienteId   Int?     @map("cliente_id")
+  quotationId Int?     @map("quotation_id")
+  contractId  Int?     @map("contract_id")
+  filePath    String   @map("file_path")
+  userId      Int      @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  client    Client?   @relation(fields: [clienteId], references: [id])
+  quotation Quotation? @relation(fields: [quotationId], references: [id])
+  contract  Contract?  @relation(fields: [contractId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@map("documents")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  accion    String
+  entidad   String
+  entidadId Int?     @map("entidad_id")
+  detalle   String?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
