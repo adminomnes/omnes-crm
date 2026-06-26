@@ -17,7 +17,9 @@
     "db:push": "cd server && npx prisma db push",
     "db:migrate": "cd server && npx prisma migrate dev",
     "db:seed": "cd server && npx prisma db seed",
-    "db:studio": "cd server && npx prisma studio"
+    "db:studio": "cd server && npx prisma studio",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "pkg": {
     "assets": [
@@ -32,10 +34,13 @@
       "server/uploads/**/*",
       "client/dist/**/*"
     ],
-    "targets": ["node22-win-x64"]
+    "targets": [
+      "node22-win-x64"
+    ]
   },
   "devDependencies": {
     "@yao-pkg/pkg": "^6.20.0",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "wrangler": "^4.105.0"
   }
 }
