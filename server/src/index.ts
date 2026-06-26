@@ -6,8 +6,33 @@ import path from 'path';
 import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../.env') });
+if (!process.env.JWT_SECRET) process.env.JWT_SECRET = 'omnes-default-secret-2026';
 
+const DATA_DIR = process.cwd();
+export const UPLOADS_PATH = path.join(DATA_DIR, 'uploads');
+const DB_PATH = path.join(DATA_DIR, 'dev.db');
+
+function ensureDirectories() {
+  if (!fs.existsSync(UPLOADS_PATH)) fs.mkdirSync(UPLOADS_PATH, { recursive: true });
+
+  const logoDest = path.join(UPLOADS_PATH, 'logo-omnes.png');
+  if (!fs.existsSync(logoDest)) {
+    const logoSource = path.join(__dirname, '../../uploads/logo-omnes.png');
+    if (fs.existsSync(logoSource)) fs.copyFileSync(logoSource, logoDest);
+  }
+
+  if (!fs.existsSync(DB_PATH)) {
+    const sourceDb = path.join(__dirname, '../prisma/dev.db');
+    if (fs.existsSync(sourceDb)) {
+      fs.copyFileSync(sourceDb, DB_PATH);
+      console.log('✓ Base de datos inicializada');
+    }
+  }
+}
+ensureDirectories();
+
+process.env.DATABASE_URL = `file:${DB_PATH}`;
 export const prisma = new PrismaClient();
 export const app = express();
 
@@ -19,9 +44,9 @@ const limiter = rateLimit({
   message: { error: 'Demasiadas solicitudes, intente nuevamente más tarde.' },
 });
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(UPLOADS_PATH));
 app.use('/api', limiter);
 
 import authRoutes from './routes/auth';

@@ -10,7 +10,8 @@ import fs from 'fs';
 
 const router = Router();
 
-const uploadDir = path.join(__dirname, '../../uploads');
+import { UPLOADS_PATH } from '../index';
+const uploadDir = UPLOADS_PATH;
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({

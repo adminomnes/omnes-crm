@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
-import { prisma } from '../index';
+import { prisma, UPLOADS_PATH } from '../index';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/roles';
 import { AuthRequest } from '../types';
@@ -213,7 +213,7 @@ router.get('/:id/pdf', authenticate, async (req: AuthRequest, res: Response) => 
     const secondaryColor = '#f3f4f6';
 
     doc.rect(0, 0, doc.page.width, 140).fill(primaryColor);
-    const logoPath = path.join(__dirname, '../../uploads/logo-omnes.png');
+    const logoPath = path.join(UPLOADS_PATH, 'logo-omnes.png');
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 40, 8, { width: 120 });
     }
